@@ -17,6 +17,7 @@
 @property (nonatomic, retain) UIView* childView;
 @property (nonatomic, retain) MKMapView* mapView;
 @property (nonatomic, retain) UIButton*  imageButton;
+@property (nonatomic, retain) UISegmentedControl *segmapType;
 
 - (void)createView;
 
@@ -33,5 +34,9 @@
 - (void)clearMapPins:(CDVInvokedUrlCommand *)command;
 
 - (void)addMapPins:(CDVInvokedUrlCommand *)command;
+
+- (void)segmentedControlValueChanged:(UISegmentedControl *)sender;
+
+- (void) closeButton:(id)button;
 
 @end
