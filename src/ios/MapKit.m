@@ -13,6 +13,7 @@
 @synthesize childView;
 @synthesize mapView;
 @synthesize imageButton;
+@synthesize segmapType;
 
 
 -(CDVPlugin*) initWithWebView:(UIWebView*)theWebView
@@ -42,19 +43,36 @@
     BOOL atBottom = ([options objectForKey:@"atBottom"]) ? [[options objectForKey:@"atBottom"] boolValue] : NO;
 
     if(atBottom) {
+       
         y += self.webView.bounds.size.height - height;
     }
 
     self.childView = [[UIView alloc] initWithFrame:CGRectMake(x,y,width,height)];
     self.mapView = [[MKMapView alloc] initWithFrame:CGRectMake(self.childView.bounds.origin.x, self.childView.bounds.origin.x, self.childView.bounds.size.width, self.childView.bounds.size.height)];
     self.mapView.delegate = self;
+    
     self.mapView.multipleTouchEnabled   = YES;
     self.mapView.autoresizesSubviews    = YES;
     self.mapView.userInteractionEnabled = YES;
 	self.mapView.showsUserLocation = YES;
 	self.mapView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 	self.childView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-
+    
+    
+  
+    // add segment Control for switch map view type
+    NSArray *itemArray = [NSArray arrayWithObjects: @"Standard", @"Satellite", @"Hybrid", nil];
+    self.segmapType = [[UISegmentedControl alloc] initWithItems:itemArray];
+    self.segmapType.frame = CGRectMake(20, 5, 200, 30);
+    self.segmapType.segmentedControlStyle = UISegmentedControlStyleBezeled;
+    self.segmapType.tintColor = [UIColor blackColor];
+    UIFont *font = [UIFont boldSystemFontOfSize:10.0f];
+    NSDictionary *attributes = [NSDictionary dictionaryWithObject:font
+                                                           forKey:UITextAttributeFont];
+    [self.segmapType setTitleTextAttributes:attributes forState:UIControlStateNormal];
+    self.segmapType.selectedSegmentIndex = 0;
+    [self.segmapType addTarget:self action:@selector(segmentedControlValueChanged:) forControlEvents:UIControlEventValueChanged];
+        
 
     CLLocationCoordinate2D centerCoord = { [[options objectForKey:@"lat"] floatValue] , [[options objectForKey:@"lon"] floatValue] };
 	CLLocationDistance diameter = [[options objectForKey:@"diameter"] floatValue];
@@ -62,12 +80,26 @@
 	MKCoordinateRegion region=[ self.mapView regionThatFits: MKCoordinateRegionMakeWithDistance(centerCoord,
                                                                                                 diameter*(height / self.webView.bounds.size.width),
                                                                                                 diameter*(height / self.webView.bounds.size.width))];
+    
+    
+    // add image button for close map
+    self.imageButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    CGRect frame = CGRectMake(285.0,12.0,  29.0, 29.0);
+   [ self.imageButton setImage:[UIImage imageNamed:@"www/map-close-button.png"] forState:UIControlStateNormal];
+    
+    [ self.imageButton setFrame:frame];
+    [ self.imageButton addTarget:self action:@selector(closeButton:) forControlEvents:UIControlEventTouchUpInside];
+    
     [self.mapView setRegion:region animated:YES];
 	[self.childView addSubview:self.mapView];
-
+    [self.childView addSubview:self.imageButton];
+    [self.childView addSubview:self.segmapType];
+   
 	[ [ [ self viewController ] view ] addSubview:self.childView];
 
 }
+
+
 
 - (void)destroyMap:(CDVInvokedUrlCommand *)command
 {
@@ -137,6 +169,29 @@
 
 }
 
+// button close action
+- (void) closeButton:(id)button
+{
+   [ self hideMap:NULL];
+    NSString* jsString = [NSString stringWithFormat:@"%@(\"%i\");", self.buttonCallback,-1];
+    [self.webView stringByEvaluatingJavaScriptFromString:jsString];
+}
+//  segment change map type
+- (void)segmentedControlValueChanged:(UISegmentedControl *)sender {
+    switch (sender.selectedSegmentIndex) {
+        case 2:
+            [self.mapView setMapType:MKMapTypeHybrid];
+            break;
+        case 1:
+            [self.mapView setMapType:MKMapTypeSatellite];
+            break;
+        default:
+            [self.mapView setMapType:MKMapTypeStandard];
+            break;
+    }
+    
+}
+
 -(void)showMap:(CDVInvokedUrlCommand *)command
 {
     if (!self.mapView)
@@ -185,32 +240,7 @@
     [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
 }
 
-//Might need this later?
-/*- (void) mapView:(MKMapView *)mapView didUpdateUserLocation:(MKUserLocation *)userLocation
-{
-    MKCoordinateRegion mapRegion;
-    mapRegion.center = userLocation.coordinate;
-    mapRegion.span.latitudeDelta = 0.2;
-    mapRegion.span.longitudeDelta = 0.2;
 
-    [self.mapView setRegion:mapRegion animated: YES];
-}
-
-
-- (void)mapView:(MKMapView *)theMapView regionDidChangeAnimated: (BOOL)animated
-{
-    NSLog(@"region did change animated");
-    float currentLat = theMapView.region.center.latitude;
-    float currentLon = theMapView.region.center.longitude;
-    float latitudeDelta = theMapView.region.span.latitudeDelta;
-    float longitudeDelta = theMapView.region.span.longitudeDelta;
-
-    NSString* jsString = nil;
-    jsString = [[NSString alloc] initWithFormat:@"geo.onMapMove(\'%f','%f','%f','%f\');", currentLat,currentLon,latitudeDelta,longitudeDelta];
-    [self.webView stringByEvaluatingJavaScriptFromString:jsString];
-    [jsString autorelease];
-}
- */
 
 
 - (MKAnnotationView *) mapView:(MKMapView *)theMapView viewForAnnotation:(id <MKAnnotation>) annotation {
@@ -308,3 +338,4 @@
 }
 
 @end
+
