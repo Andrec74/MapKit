@@ -117,6 +117,14 @@
 		self.imageButton = nil;
 
 	}
+	
+	if(self.segmapType)
+	{
+		[ self.segmapType removeFromSuperview];
+		//[ self.imageButton removeTarget:self action:@selector(closeButton:) forControlEvents:UIControlEventTouchUpInside];
+		self.segmapType = nil;
+        
+	}
 	if(self.childView)
 	{
 		[ self.childView removeFromSuperview];
