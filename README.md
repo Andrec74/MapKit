@@ -123,6 +123,8 @@ Missing features
 
 Info bubbles: Simple info bubbles supported (title, snippet and custom icons for markers). Custom info bubbles not supported (i.e HTML bubbles etc..).
 
+
+
 License
 -------
 
