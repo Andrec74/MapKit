@@ -109,9 +109,14 @@ You can override the options by passing a suitable options object as arguments t
       height: 460, // height of the map (width is always full size for now)
       diameter: 1000,   // unused for now
       atBottom: true,   // bottom or top of the webview
+      typeMap:0, //only IOS 0 standard , 1 satellite ,2 hybrid
       lat: 49.281468,   // initial camera position latitude
       lon: -123.104446  // initial camera position latitude
     };
+    
+IOS Specific
+-------------
+In show Map add toolbar for close webview and Segment Control for switch map type 
 
 Sample App
 ----------
