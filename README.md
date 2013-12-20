@@ -27,7 +27,7 @@ or with cordova CLI
 
     cordova -d plugin add /path/to/MapKit --variable API_KEY="YOUR_API_KEY_FROM_GOOGLE"
 	
-(/path/to/MapKit could be the git repository https://github.com/imhotep/MapKit)
+(/path/to/MapKit could be the git repository https://github.com/Andrec74/MapKit)
 
 
 Sample code
