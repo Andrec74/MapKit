@@ -16,6 +16,7 @@
 @synthesize segmapType;
 
 
+
 -(CDVPlugin*) initWithWebView:(UIWebView*)theWebView
 {
     self = (MapKitView*)[super initWithWebView:theWebView];
@@ -36,12 +37,14 @@
     //This is the Designated Initializer
 
     // defaults
-    float height = ([options objectForKey:@"height"]) ? [[options objectForKey:@"height"] floatValue] : self.webView.bounds.size.height/2;
+    float height = ([options objectForKey:@"height"]) ? [[options objectForKey:@"height"] floatValue] : self.webView.bounds.size.height;
     float width = ([options objectForKey:@"width"]) ? [[options objectForKey:@"width"] floatValue] : self.webView.bounds.size.width;
     float x = self.webView.bounds.origin.x;
     float y = self.webView.bounds.origin.y;
     BOOL atBottom = ([options objectForKey:@"atBottom"]) ? [[options objectForKey:@"atBottom"] boolValue] : NO;
-
+    int typeMap=([options objectForKey:@"typeMap"]) ? [[options objectForKey:@"typeMap"] intValue] : 0;
+    
+    
     if(atBottom) {
        
         y += self.webView.bounds.size.height - height;
@@ -58,12 +61,12 @@
 	self.mapView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 	self.childView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     
-    
+    self.imageButton = [UIButton buttonWithType:UIButtonTypeCustom];
   
-    // add segment Control for switch map view type
+    
     NSArray *itemArray = [NSArray arrayWithObjects: @"Standard", @"Satellite", @"Hybrid", nil];
     self.segmapType = [[UISegmentedControl alloc] initWithItems:itemArray];
-    self.segmapType.frame = CGRectMake(20, 5, 200, 30);
+    self.segmapType.frame = CGRectMake((self.mapView.frame.size.width/2)-100, 5, 200, 30);
     self.segmapType.segmentedControlStyle = UISegmentedControlStyleBezeled;
     self.segmapType.tintColor = [UIColor blackColor];
     UIFont *font = [UIFont boldSystemFontOfSize:10.0f];
@@ -72,7 +75,28 @@
     [self.segmapType setTitleTextAttributes:attributes forState:UIControlStateNormal];
     self.segmapType.selectedSegmentIndex = 0;
     [self.segmapType addTarget:self action:@selector(segmentedControlValueChanged:) forControlEvents:UIControlEventValueChanged];
+    
+    if(typeMap) {
         
+        if (typeMap>2) {
+            typeMap=0;
+        }
+        self.segmapType.selectedSegmentIndex = typeMap;
+    }
+    switch (self.segmapType.selectedSegmentIndex) {
+        case 2:
+            [self.mapView setMapType:MKMapTypeHybrid];
+            break;
+        case 1:
+            [self.mapView setMapType:MKMapTypeSatellite];
+            break;
+        default:
+            [self.mapView setMapType:MKMapTypeStandard];
+            break;
+    }
+
+    
+    
 
     CLLocationCoordinate2D centerCoord = { [[options objectForKey:@"lat"] floatValue] , [[options objectForKey:@"lon"] floatValue] };
 	CLLocationDistance diameter = [[options objectForKey:@"diameter"] floatValue];
@@ -82,18 +106,31 @@
                                                                                                 diameter*(height / self.webView.bounds.size.width))];
     
     
-    // add image button for close map
-    self.imageButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    CGRect frame = CGRectMake(285.0,12.0,  29.0, 29.0);
-   [ self.imageButton setImage:[UIImage imageNamed:@"www/map-close-button.png"] forState:UIControlStateNormal];
+    //   CGRect frame = CGRectMake(285.0,12.0,  29.0, 29.0);
     
-    [ self.imageButton setFrame:frame];
-    [ self.imageButton addTarget:self action:@selector(closeButton:) forControlEvents:UIControlEventTouchUpInside];
+    //   [ self.imageButton setImage:[UIImage imageNamed:@"www/map-close-button.png"] forState:UIControlStateNormal];
+    
+    //    [ self.imageButton setFrame:frame];
+    //   [ self.imageButton addTarget:self action:@selector(closeButton:) forControlEvents:UIControlEventTouchUpInside];
+    
+    
+    
+    UIToolbar *toolbar = [[UIToolbar alloc] init];
+    toolbar.frame = CGRectMake( 0,0, self.mapView.frame.size.width, 44);
+    [toolbar setBarStyle:UIBarStyleBlackTranslucent];
+    //add buttons to the toolbar
+    UIBarButtonItem *button1 = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemStop target:self action:@selector(closeButton:) ];
+    
+    [toolbar setItems:[NSArray arrayWithObjects:button1, nil]];
+    
     
     [self.mapView setRegion:region animated:YES];
+    [self.mapView addSubview:toolbar];
+    [self.mapView addSubview:self.segmapType];
 	[self.childView addSubview:self.mapView];
-    [self.childView addSubview:self.imageButton];
-    [self.childView addSubview:self.segmapType];
+    //   [self.childView addSubview:self.imageButton];
+    //   [self.childView addSubview:self.segmapType];
+
    
 	[ [ [ self viewController ] view ] addSubview:self.childView];
 
@@ -117,8 +154,7 @@
 		self.imageButton = nil;
 
 	}
-	
-	if(self.segmapType)
+    if(self.segmapType)
 	{
 		[ self.segmapType removeFromSuperview];
 		//[ self.imageButton removeTarget:self action:@selector(closeButton:) forControlEvents:UIControlEventTouchUpInside];
@@ -162,6 +198,7 @@
         }
         else if([[pinData valueForKey:@"icon"] isKindOfClass:[NSDictionary class]])
         {
+          
             NSDictionary *iconOptions = [pinData valueForKey:@"icon"];
             pinColor = [[iconOptions valueForKey:@"pinColor" ] description];
             imageURL=[[iconOptions valueForKey:@"resource"] description];
@@ -177,14 +214,15 @@
 
 }
 
-// button close action
+
 - (void) closeButton:(id)button
 {
-   [ self hideMap:NULL];
+  [ self hideMap:NULL];
     NSString* jsString = [NSString stringWithFormat:@"%@(\"%i\");", self.buttonCallback,-1];
     [self.webView stringByEvaluatingJavaScriptFromString:jsString];
+    [ self destroyMap:NULL];
 }
-//  segment change map type
+
 - (void)segmentedControlValueChanged:(UISegmentedControl *)sender {
     switch (sender.selectedSegmentIndex) {
         case 2:
@@ -248,7 +286,32 @@
     [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
 }
 
+//Might need this later?
+/*- (void) mapView:(MKMapView *)mapView didUpdateUserLocation:(MKUserLocation *)userLocation
+{
+    MKCoordinateRegion mapRegion;
+    mapRegion.center = userLocation.coordinate;
+    mapRegion.span.latitudeDelta = 0.2;
+    mapRegion.span.longitudeDelta = 0.2;
 
+    [self.mapView setRegion:mapRegion animated: YES];
+}
+
+
+- (void)mapView:(MKMapView *)theMapView regionDidChangeAnimated: (BOOL)animated
+{
+    NSLog(@"region did change animated");
+    float currentLat = theMapView.region.center.latitude;
+    float currentLon = theMapView.region.center.longitude;
+    float latitudeDelta = theMapView.region.span.latitudeDelta;
+    float longitudeDelta = theMapView.region.span.longitudeDelta;
+
+    NSString* jsString = nil;
+    jsString = [[NSString alloc] initWithFormat:@"geo.onMapMove(\'%f','%f','%f','%f\');", currentLat,currentLon,latitudeDelta,longitudeDelta];
+    [self.webView stringByEvaluatingJavaScriptFromString:jsString];
+    [jsString autorelease];
+}
+ */
 
 
 - (MKAnnotationView *) mapView:(MKMapView *)theMapView viewForAnnotation:(id <MKAnnotation>) annotation {
@@ -346,4 +409,3 @@
 }
 
 @end
-
