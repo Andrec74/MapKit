@@ -29,6 +29,7 @@ function setDefaults(options) {
         height: 460,
 		diameter: 1000,
 		atBottom: true,
+		typeMap:0, //0 standard,1 Satellite,2 hybrid  (only IOS)
 		lat: 49.281468,
 		lon: -123.104446
     };
